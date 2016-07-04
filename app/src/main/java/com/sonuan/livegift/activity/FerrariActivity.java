@@ -5,7 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -23,6 +26,9 @@ public class FerrariActivity extends AppCompatActivity implements View.OnClickLi
 
     private ImageView mIVGift;
     private ImageView mImageView;
+    private EditText mEditOffsetY;
+    private EditText mEditStartX;
+    private EditText mEditAngle;
 
     public static void toActivity(Context context) {
         Intent intent = new Intent(context, FerrariActivity.class);
@@ -33,6 +39,9 @@ public class FerrariActivity extends AppCompatActivity implements View.OnClickLi
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ferrari);
+        mEditStartX = (EditText) findViewById(R.id.edit_start_x);
+        mEditOffsetY = (EditText) findViewById(R.id.edit_offset_y);
+        mEditAngle = (EditText) findViewById(R.id.edit_angle);
         mIVGift = (ImageView) findViewById(R.id.iv_gift);
         mIVGift.setOnClickListener(this);
         mImageView = (ImageView) findViewById(R.id.iv_gif);
@@ -83,7 +92,22 @@ public class FerrariActivity extends AppCompatActivity implements View.OnClickLi
                 mGiftBaseDrawable.start();
                 break;
             case R.id.btn_start:
-                GiftAnimUtils.transAnim(mIVGift, 700, 300, 300, 300).start();
+                String offsety = mEditOffsetY.getText().toString();
+                String startx = mEditStartX.getText().toString();
+                String anglex = mEditAngle.getText().toString();
+                int offsetY = 0;
+                int startX = 0;
+                int angle = 0;
+                if (!TextUtils.isEmpty(offsety)) {
+                    offsetY = Integer.parseInt(offsety);
+                }
+                if (!TextUtils.isEmpty(offsety)) {
+                    startX = Integer.parseInt(startx);
+                }
+                if (!TextUtils.isEmpty(offsety)) {
+                    angle = Integer.parseInt(anglex);
+                }
+                LiveGiftPathAnimUtils.transAnim(mIVGift, Gravity.CENTER_VERTICAL, offsetY, startX, angle, null).start();
                 break;
         }
     }

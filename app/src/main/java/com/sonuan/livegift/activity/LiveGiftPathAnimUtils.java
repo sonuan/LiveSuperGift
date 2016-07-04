@@ -1,0 +1,97 @@
+package com.sonuan.livegift.activity;
+
+import android.animation.FloatEvaluator;
+import android.animation.ValueAnimator;
+import android.view.Gravity;
+import android.view.View;
+
+import java.math.BigDecimal;
+
+/**********************
+ * @author: wusongyuan
+ * @date: 2016-07-01
+ * @desc: 直播-高级礼物-轨迹动画
+ **********************/
+public class LiveGiftPathAnimUtils {
+
+
+    private static final String TAG = LiveGiftPathAnimUtils.class.getSimpleName();
+    public static final int OFFSET_Y = 200;
+
+    // 屏幕的宽度
+    public static final int SCREEN_WIDTH = 720;
+    // 屏幕的高度, 到时要减掉状态栏标题栏
+    public static final int SCREEN_HEIGHT = 1280;
+    // 屏幕高度的一半
+    public static final int SCREEN_HEIGHT_HALF = SCREEN_HEIGHT / 2;
+
+    /**
+     * @param view
+     * @param gravity y轴上的位置 Gravity.TOP,Gravity.CENTER_VERTICAL,Gravity.BOTTOM
+     * @param offsetY y轴的偏移量
+     * @param startX  x轴的起点坐标
+     * @param angle   轨迹与x轴的角度 0~360
+     * @return
+     */
+    public static ValueAnimator transAnim(final View view, int gravity, int offsetY, final int startX, final int
+            angle, final ValueAnimator.AnimatorUpdateListener listener) {
+        int startY = 0; // 确定Y轴上的位置
+        // 根据offsetY偏移量计算出y轴开始坐标
+        if (gravity == Gravity.TOP) {
+            startY = 0 + offsetY;
+        } else if (gravity == Gravity.CENTER_VERTICAL) {
+            startY = SCREEN_HEIGHT_HALF - view.getHeight() / 2 + offsetY;
+        } else if (gravity == Gravity.BOTTOM) {
+            startY = SCREEN_HEIGHT - view.getHeight() + offsetY;
+        } else {
+            try {
+                throw new Exception("gravity is not one of Gravity.TOP,Gravity.CENTER_VERTICAL,Gravity.BOTTOM");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        int endX = 0;
+        // 因为必须移出到屏幕以外,利用角度, 得出x轴最终坐标
+        if (360 - angle <= 90 || angle <= 90) { // x轴正方向
+            endX = SCREEN_WIDTH + view.getWidth();
+        } else { // x轴负方向
+            endX = 0 - view.getWidth();
+        }
+
+        final int finallyX = endX; // x轴最终坐标
+        final int originalY = startY; // y轴原始坐标, 根据gravity和offsetY计算得出
+        final float tanAngle = (float) Math.tan(angle / 180.0f * Math.PI);
+        final BigDecimal bigDecimal = new BigDecimal(tanAngle);
+
+        ValueAnimator valueAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
+        valueAnimator.setDuration(5000);
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+
+            private FloatEvaluator mEvaluator = new FloatEvaluator();
+
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                if (listener != null) {
+                    listener.onAnimationUpdate(animation);
+                }
+                float value = (float) animation.getAnimatedValue();
+                float x = startX;
+                float y = 0;
+                if (angle == 270) { // y轴 负方向
+                    y = mEvaluator.evaluate(value, originalY, 0 - view.getHeight());
+                } else if (angle == 90) { // y轴 正方向
+                    y = mEvaluator.evaluate(value, originalY, SCREEN_HEIGHT + view.getHeight());
+                } else {
+                    x = mEvaluator.evaluate(value, startX, finallyX);
+                    y = originalY + ((x - startX) * bigDecimal.floatValue());
+                }
+                view.setX(x);
+                view.setY(y);
+                //                Log.i(TAG, "onAnimationUpdate: x" + x + " y:" + y);
+            }
+        });
+        return valueAnimator;
+    }
+
+}
