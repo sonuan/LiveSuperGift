@@ -108,7 +108,7 @@ public class FerrariActivity extends AppCompatActivity implements View.OnClickLi
                     angle = Integer.parseInt(anglex);
                 }
                 LiveGiftPathAnimUtils.transAnim(mIVGift, Gravity.CENTER_VERTICAL, offsetY, startX,
-                        LiveGiftPathAnimUtils.PATH.XN, angle, null).start();
+                        LiveGiftPathAnimUtils.PATH.XP_YP, 10, null).start();
                 break;
         }
     }

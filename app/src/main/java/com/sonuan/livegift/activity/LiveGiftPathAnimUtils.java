@@ -1,10 +1,13 @@
 package com.sonuan.livegift.activity;
 
+import android.animation.AnimatorSet;
 import android.animation.FloatEvaluator;
-import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
 
 import java.math.BigDecimal;
 
@@ -25,6 +28,8 @@ public class LiveGiftPathAnimUtils {
     public static final int SCREEN_HEIGHT = 1280;
     // 屏幕高度的一半
     public static final int SCREEN_HEIGHT_HALF = SCREEN_HEIGHT / 2;
+    static FloatEvaluator mEvaluator = new FloatEvaluator();
+
 
     public @interface PATH {
         String XP = "POSITIVE_X";//正X 0'
@@ -37,12 +42,12 @@ public class LiveGiftPathAnimUtils {
         String XN_YN = "NEGATIVE_X-NEGATIVE_Y"; // 270 ~ 360
     }
 
-    public static ValueAnimator transAnim(final View view, @PATH String
+    public static AnimatorSet transAnim(final View view, @PATH String
             path, final int angle, final ValueAnimator.AnimatorUpdateListener listener) {
         return transAnim(view, Gravity.CENTER_VERTICAL, 0, -1, path, angle, listener);
     }
 
-    public static ValueAnimator transAnim(final View view, int gravity, int offsetY, @PATH String
+    public static AnimatorSet transAnim(final View view, int gravity, int offsetY, @PATH String
             path, final int angle, final ValueAnimator.AnimatorUpdateListener listener) {
         return transAnim(view, gravity, offsetY, -1, path, angle, listener);
     }
@@ -52,12 +57,12 @@ public class LiveGiftPathAnimUtils {
      * @param gravity
      * @param offsetY
      * @param startX
-     * @param path 路径方向
+     * @param path     路径方向
      * @param angle    0 ~ 90, 注意:这边的角度是0~90
      * @param listener
      * @return
      */
-    public static ValueAnimator transAnim(final View view, int gravity, int offsetY, final int startX, @PATH String
+    public static AnimatorSet transAnim(final View view, int gravity, int offsetY, final int startX, @PATH String
             path, final int angle, final ValueAnimator.AnimatorUpdateListener listener) {
         if (angle < 0 || 90 < angle) {
             // angle without 0 ~ 90.
@@ -111,7 +116,7 @@ public class LiveGiftPathAnimUtils {
      * @param angle   轨迹与x轴的角度 0~360
      * @return
      */
-    public static ValueAnimator transAnim(final View view, int gravity, int offsetY, final int startX, final int
+    public static AnimatorSet transAnim(final View view, int gravity, int offsetY, final int startX, final int
             angle, final ValueAnimator.AnimatorUpdateListener listener) {
         int startY = 0; // 确定Y轴上的位置
         // 根据offsetY偏移量计算出y轴开始坐标
@@ -131,24 +136,33 @@ public class LiveGiftPathAnimUtils {
 
         // 因为必须移出到屏幕以外,利用角度, 得出x轴最终坐标
         if (360 - angle <= 90 || angle <= 90) { // x轴正方向
-            endX = SCREEN_WIDTH + view.getWidth();
+            endX = SCREEN_WIDTH;
             startx = startX - view.getWidth(); // 需要减掉该view的宽
         } else { // x轴负方向
             endX = 0 - view.getWidth();
             startx = startX;
         }
+        int endY = 0;
+        if (angle == 270) { // y轴 负方向
+            endY = 0 - view.getHeight();
+        } else if (angle == 90) { // y轴 正方向
+            endY = SCREEN_HEIGHT + view.getHeight();
+        }
+
         final int finallyStartX = startx;
         final int finallyEndX = endX; // x轴最终坐标
-        final int originalY = startY; // y轴原始坐标, 根据gravity和offsetY计算得出
+        final int finallyStartY = startY; // y轴原始坐标, 根据gravity和offsetY计算得出
+        final int finallyEndY = endY;
+        final float pauseX = (finallyEndX + finallyStartX) / 2.0f;// 暂停x轴坐标
         final float tanAngle = (float) Math.tan(angle / 180.0f * Math.PI);
         final BigDecimal bigDecimal = new BigDecimal(tanAngle);
+        final float pauseY = finallyStartY + ((pauseX - finallyStartX) * bigDecimal.floatValue());
 
-        ValueAnimator valueAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
-        valueAnimator.setDuration(5000);
-        valueAnimator.setInterpolator(new MyInterploator());
-        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+        ValueAnimator enterAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
+        enterAnimator.setDuration(1000);
+        enterAnimator.setInterpolator(new DecelerateInterpolator());
+        enterAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
 
-            private FloatEvaluator mEvaluator = new FloatEvaluator();
 
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
@@ -159,42 +173,45 @@ public class LiveGiftPathAnimUtils {
                 float x = finallyStartX;
                 float y = 0;
                 if (angle == 270) { // y轴 负方向
-                    y = mEvaluator.evaluate(value, originalY, 0 - view.getHeight());
+                    y = mEvaluator.evaluate(value, finallyStartY, pauseY);
                 } else if (angle == 90) { // y轴 正方向
-                    y = mEvaluator.evaluate(value, originalY, SCREEN_HEIGHT + view.getHeight());
+                    y = mEvaluator.evaluate(value, finallyStartY, pauseY);
                 } else {
-                    x = mEvaluator.evaluate(value, finallyStartX, finallyEndX);
-                    y = originalY + ((x - finallyStartX) * bigDecimal.floatValue());
+                    x = mEvaluator.evaluate(value, finallyStartX, pauseX);
+                    y = finallyStartY + ((x - finallyStartX) * bigDecimal.floatValue());
                 }
                 view.setX(x);
                 view.setY(y);
-                //                Log.i(TAG, "onAnimationUpdate: x" + x + " y:" + y);
+                Log.i(TAG, "enter: x:" + x + " y:" + y);
             }
         });
-        return valueAnimator;
-    }
 
-    public static class MyInterploator implements TimeInterpolator {
-
-        private float startTime = 0.5f;
-        private float endTime;
-        private float stayTime = 0.2f;
-
-        public MyInterploator() {
-            endTime = startTime + stayTime;
-        }
-
-        @Override
-        public float getInterpolation(float input) {
-            if (startTime < input && input <= endTime) {
-                return startTime;
-            } else if (input > endTime) {
-                // 基数
-                float mul = (1.0f - startTime) / (1.0f - endTime);
-                return (input - 1.0f) * mul + 1.0f;
+        ValueAnimator pauseAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
+        pauseAnimator.setDuration(500);
+        ValueAnimator exitAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
+        exitAnimator.setDuration(1000);
+        exitAnimator.setInterpolator(new LinearInterpolator());
+        exitAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                float value = (float) animation.getAnimatedValue();
+                float x = pauseX;
+                float y = 0;
+                if (angle == 270) { // y轴 负方向
+                    y = mEvaluator.evaluate(value, pauseY, finallyEndY);
+                } else if (angle == 90) { // y轴 正方向
+                    y = mEvaluator.evaluate(value, pauseY, finallyEndY);
+                } else {
+                    x = mEvaluator.evaluate(value, pauseX, finallyEndX);
+                    y = pauseY + ((x - pauseX) * bigDecimal.floatValue());
+                }
+                view.setX(x);
+                view.setY(y);
+                Log.i(TAG, "exit: x" + x + " y:" + y);
             }
-            return input;
-        }
+        });
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playSequentially(enterAnimator, pauseAnimator, exitAnimator);
+        return animatorSet;
     }
-
 }
