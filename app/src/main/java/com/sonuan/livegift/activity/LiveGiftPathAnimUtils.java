@@ -159,7 +159,7 @@ public class LiveGiftPathAnimUtils {
         final float pauseY = finallyStartY + ((pauseX - finallyStartX) * bigDecimal.floatValue());
 
         ValueAnimator enterAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
-        enterAnimator.setDuration(1000);
+        enterAnimator.setDuration(500);
         enterAnimator.setInterpolator(new DecelerateInterpolator());
         enterAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
 
@@ -187,9 +187,9 @@ public class LiveGiftPathAnimUtils {
         });
 
         ValueAnimator pauseAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
-        pauseAnimator.setDuration(500);
+        pauseAnimator.setDuration(1000);
         ValueAnimator exitAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
-        exitAnimator.setDuration(1000);
+        exitAnimator.setDuration(500);
         exitAnimator.setInterpolator(new LinearInterpolator());
         exitAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
