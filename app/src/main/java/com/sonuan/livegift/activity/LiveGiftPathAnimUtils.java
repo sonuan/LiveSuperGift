@@ -3,7 +3,6 @@ package com.sonuan.livegift.activity;
 import android.animation.AnimatorSet;
 import android.animation.FloatEvaluator;
 import android.animation.ValueAnimator;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
@@ -182,7 +181,7 @@ public class LiveGiftPathAnimUtils {
                 }
                 view.setX(x);
                 view.setY(y);
-                Log.i(TAG, "enter: x:" + x + " y:" + y);
+//                Log.i(TAG, "enter: x:" + x + " y:" + y);
             }
         });
 
@@ -207,7 +206,7 @@ public class LiveGiftPathAnimUtils {
                 }
                 view.setX(x);
                 view.setY(y);
-                Log.i(TAG, "exit: x" + x + " y:" + y);
+//                Log.i(TAG, "exit: x" + x + " y:" + y);
             }
         });
         AnimatorSet animatorSet = new AnimatorSet();

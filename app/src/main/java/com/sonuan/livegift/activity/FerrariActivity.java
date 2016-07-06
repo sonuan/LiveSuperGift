@@ -15,6 +15,7 @@ import android.widget.Toast;
 import com.sonuan.livegift.R;
 import com.sonuan.livegift.gift.FerrariRenderer;
 import com.sonuan.livegift.gift.base.GiftBaseDrawable;
+import com.sonuan.livegift.widget.MyImageView;
 
 import java.io.IOException;
 
@@ -24,7 +25,7 @@ public class FerrariActivity extends AppCompatActivity implements View.OnClickLi
     private static final String TAG = FerrariActivity.class.getSimpleName();
     private GiftBaseDrawable mGiftBaseDrawable;
 
-    private ImageView mIVGift;
+    private MyImageView mIVGift;
     private ImageView mImageView;
     private EditText mEditOffsetY;
     private EditText mEditStartX;
@@ -42,7 +43,7 @@ public class FerrariActivity extends AppCompatActivity implements View.OnClickLi
         mEditStartX = (EditText) findViewById(R.id.edit_start_x);
         mEditOffsetY = (EditText) findViewById(R.id.edit_offset_y);
         mEditAngle = (EditText) findViewById(R.id.edit_angle);
-        mIVGift = (ImageView) findViewById(R.id.iv_gift);
+        mIVGift = (MyImageView) findViewById(R.id.iv_gift);
         mIVGift.setOnClickListener(this);
         mImageView = (ImageView) findViewById(R.id.iv_gif);
         mImageView.setOnClickListener(this);
@@ -107,6 +108,8 @@ public class FerrariActivity extends AppCompatActivity implements View.OnClickLi
                 if (!TextUtils.isEmpty(offsety)) {
                     angle = Integer.parseInt(anglex);
                 }
+
+//                ObjectAnimator.ofFloat(mIVGift, "x",100f);
                 LiveGiftPathAnimUtils.transAnim(mIVGift, Gravity.CENTER_VERTICAL, offsetY, 0, 10, null).start();
                 break;
         }
