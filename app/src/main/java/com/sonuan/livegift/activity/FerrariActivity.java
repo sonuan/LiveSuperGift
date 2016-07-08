@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -108,9 +107,11 @@ public class FerrariActivity extends AppCompatActivity implements View.OnClickLi
                 if (!TextUtils.isEmpty(offsety)) {
                     angle = Integer.parseInt(anglex);
                 }
-
-//                ObjectAnimator.ofFloat(mIVGift, "x",100f);
-                LiveGiftPathAnimUtils.transAnim(mIVGift, Gravity.CENTER_VERTICAL, offsetY, 0, 10, null).start();
+                mIVGift.setX(100f);
+                mIVGift.setScaleX(0.5f);
+                mIVGift.setRotation(30);
+//                ObjectAnimator.ofFloat(mIVGift, "translationY",100f).setDuration(1000).start();
+//                LiveGiftPathAnimUtils.transAnim(mIVGift, Gravity.CENTER_VERTICAL, offsetY, 0, 10, null).start();
                 break;
         }
     }

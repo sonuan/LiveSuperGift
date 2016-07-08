@@ -45,8 +45,8 @@ public class MyLinearLayout extends LinearLayout {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
         Log.i(TAG, "onDraw: ");
+        super.onDraw(canvas);
     }
 
     @Override
@@ -122,4 +122,9 @@ public class MyLinearLayout extends LinearLayout {
     }
 
 
+    @Override
+    public void requestLayout() {
+        super.requestLayout();
+        Log.i(TAG, "requestLayout: ");
+    }
 }

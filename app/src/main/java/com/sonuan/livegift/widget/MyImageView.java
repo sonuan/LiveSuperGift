@@ -114,4 +114,9 @@ public class MyImageView extends ImageView {
         Log.i(TAG, "invalidateOutline: ");
     }
 
+    @Override
+    public void requestLayout() {
+        super.requestLayout();
+        Log.i(TAG, "requestLayout: ");
+    }
 }
