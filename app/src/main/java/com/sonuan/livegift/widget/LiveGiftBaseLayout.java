@@ -4,11 +4,14 @@ import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.os.Build;
 import android.support.annotation.IdRes;
 import android.support.annotation.LayoutRes;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 
@@ -20,11 +23,11 @@ import android.view.animation.LinearInterpolator;
 public abstract class LiveGiftBaseLayout {
 
     // 屏幕的宽度
-    public static final int SCREEN_WIDTH = 720;
+    public int mParentWidth = 0;
     // 屏幕的高度, 到时要减掉状态栏标题栏
-    public static final int SCREEN_HEIGHT = 1280;
+    public int mParentHeight = 0;
     // 屏幕高度的一半
-    public static final int SCREEN_HEIGHT_HALF = SCREEN_HEIGHT / 2;
+    public int mParentHeightHalf;
     private Animator.AnimatorListener mAnimatorListener;
     private AnimatorSet mAnimatorSet;
 
@@ -32,10 +35,36 @@ public abstract class LiveGiftBaseLayout {
 
     private ViewGroup mParentView;
 
-    public LiveGiftBaseLayout(Context context, ViewGroup viewGroup) {
+    public LiveGiftBaseLayout(ViewGroup viewGroup) {
+        if (viewGroup == null) {
+            return;
+        }
         setupAnimators();
         mContext = viewGroup.getContext();
         mParentView = viewGroup;
+
+        ViewTreeObserver vto = mParentView.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                    mParentView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                } else {
+                    mParentView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                }
+                mParentWidth = mParentView.getWidth();
+                mParentHeight = mParentView.getHeight();
+                mParentHeightHalf = mParentHeight / 2;
+                Log.d("LiveGiftBaseLayout", "mParentWidth:" + mParentWidth);
+                Log.d("LiveGiftBaseLayout", "mParentHeight:" + mParentHeight);
+            }
+        });
+        mParentWidth = mParentView.getMeasuredWidth();
+        mParentHeight = mParentView.getMeasuredHeight();
+        mParentHeightHalf = mParentHeight / 2;
+        Log.d("LiveGiftBaseLayout", "mParentWidth:" + mParentWidth);
+        Log.d("LiveGiftBaseLayout", "mParentHeight:" + mParentHeight);
+
     }
 
     public Context getContext() {
@@ -107,9 +136,37 @@ public abstract class LiveGiftBaseLayout {
         });
         mAnimatorSet = new AnimatorSet();
         mAnimatorSet.playSequentially(enterAnimator, pauseAnimator, exitAnimator);
-        if (mAnimatorListener != null) {
-            mAnimatorSet.addListener(mAnimatorListener);
-        }
+        mAnimatorSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                if (mAnimatorListener != null) {
+                    mAnimatorListener.onAnimationStart(animation);
+                }
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (mAnimatorListener != null) {
+                    mAnimatorListener.onAnimationEnd(animation);
+                }
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                if (mAnimatorListener != null) {
+                    mAnimatorListener.onAnimationCancel(animation);
+                }
+                onCancel();
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+                if (mAnimatorListener != null) {
+                    mAnimatorListener.onAnimationRepeat(animation);
+                }
+            }
+        });
+
     }
 
     public void start() {
@@ -128,4 +185,15 @@ public abstract class LiveGiftBaseLayout {
 
     protected abstract void exitAnimator(float progress);
 
+    protected abstract void initViews();
+
+    protected abstract void initDatas();
+
+    protected void onCancel() {
+
+    }
+
+    public void setAnimatorListener(Animator.AnimatorListener animatorListener) {
+        mAnimatorListener = animatorListener;
+    }
 }

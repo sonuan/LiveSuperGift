@@ -1,11 +1,10 @@
 package com.sonuan.livegift.widget;
 
-import android.animation.Animator;
 import android.animation.FloatEvaluator;
 import android.animation.ObjectAnimator;
-import android.content.Context;
 import android.os.Build;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -14,7 +13,6 @@ import android.widget.ImageView;
 import com.sonuan.livegift.R;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 
 /**
  * @author: wusongyuan
@@ -35,7 +33,8 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
 
     private int mStartX = 720;
 
-    private int mStartY = 87;
+    private int mPathAngle = 170;
+    static FloatEvaluator mEvaluator = new FloatEvaluator();
 
     private float mPauseStartX = 0f;
     private float mPauseStartY = 0f;
@@ -51,15 +50,17 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
     private float mExitStartY = 0;
     private float mExitEndX = 0;
     private float mExitEndY = 0;
+    private int gravity = Gravity.BOTTOM;
+    private int offsetY = -300;
 
-    public LiveFerrariLayout(Context context, ViewGroup viewGroup) {
-        super(context, viewGroup);
+    public LiveFerrariLayout(ViewGroup viewGroup) {
+        super(viewGroup);
         setContentView(R.layout.item_live_gift_car);
-        initView();
-        initData();
+        initViews();
+        initDatas();
     }
 
-    private void initView() {
+    protected void initViews() {
         view = findViewById(R.id.carFerrari);
 
         if (view.getMeasuredHeight() == 0 || view.getMeasuredWidth() == 0) {
@@ -110,11 +111,26 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
     }
 
 
-    private void initData() {
+    protected void initDatas() {
         int endX = 0;
+
+        int startY = 0; // 确定Y轴上的位置
+        // 根据offsetY偏移量计算出y轴开始坐标
+        if (gravity == Gravity.TOP) {
+            startY = 0 + offsetY;
+        } else if (gravity == Gravity.CENTER_VERTICAL) {
+            startY = mParentHeightHalf - view.getMeasuredHeight() / 2 + offsetY;
+        } else if (gravity == Gravity.BOTTOM) {
+            startY = mParentHeight - view.getMeasuredHeight() + offsetY;
+        } else {
+            // gravity is not one of Gravity.TOP,Gravity.CENTER_VERTICAL,Gravity.BOTTOM
+            return;
+        }
+        mEnterStartY = startY; // y轴原始坐标, 根据gravity和offsetY计算得出
+
         // 因为必须移出到屏幕以外,利用角度, 得出x轴最终坐标
-        if (360 - angle <= 90 || angle <= 90) { // x轴正方向
-            endX = SCREEN_WIDTH;
+        if (360 - mPathAngle <= 90 || mPathAngle <= 90) { // x轴正方向
+            endX = mParentWidth;
             mEnterStartX = mStartX - view.getMeasuredWidth(); // 需要减掉该view的宽
         } else { // x轴负方向
             endX = 0 - view.getMeasuredWidth();
@@ -124,18 +140,17 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
 
 
         int endY = 0;
-        if (angle == 270) { // y轴 负方向
+        if (mPathAngle == 270) { // y轴 负方向
             endY = 0 - view.getMeasuredHeight();
-        } else if (angle == 90) { // y轴 正方向
-            endY = SCREEN_HEIGHT + view.getMeasuredHeight();
+        } else if (mPathAngle == 90) { // y轴 正方向
+            endY = mParentHeight + view.getMeasuredHeight();
         }
         mExitEndY = endY;
-        mEnterStartY = mStartY; // y轴原始坐标, 根据gravity和offsetY计算得出
 
         mEnterEndX = (mExitEndX + mEnterStartX) / 2.0f;// 暂停x轴坐标
         mPauseStartX = mEnterEndX;
 
-        final float tanAngle = (float) Math.tan(angle / 180.0f * Math.PI);
+        final float tanAngle = (float) Math.tan(mPathAngle / 180.0f * Math.PI);
         mTanBigDecimal = new BigDecimal(tanAngle);
         mEnterEndY = mEnterStartY + ((mPauseStartX - mEnterStartX) * mTanBigDecimal.floatValue());
         mPauseStartY = mEnterEndY;
@@ -147,26 +162,6 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
         mExitStartY = mPauseEndY;
 
     }
-
-    private ArrayList<Animator> mWheelAnimatorList = new ArrayList<>();
-
-
-    private void startAnimation4Wheel(View... wheelList) {
-        int length = wheelList.length;
-        for (int i = 0; i < length; i++) {
-            View wheel = wheelList[i];
-            ObjectAnimator animator = ObjectAnimator.ofFloat(wheel, "rotation", wheel.getRotation() - 360);
-            animator.setInterpolator(null);
-            animator.setDuration(500);
-            animator.setRepeatCount(-1);
-            animator.start();
-            mWheelAnimatorList.add(animator);
-        }
-
-    }
-
-    private int angle = 170;
-    static FloatEvaluator mEvaluator = new FloatEvaluator();
 
 
     @Override
@@ -190,9 +185,9 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
     private void setXY(float progress, float startX, float endX, float startY, float endY) {
         float x = startX;
         float y = startY;
-        if (angle == 270) { // y轴 负方向
+        if (mPathAngle == 270) { // y轴 负方向
             y = mEvaluator.evaluate(progress, startY, endY);
-        } else if (angle == 90) { // y轴 正方向
+        } else if (mPathAngle == 90) { // y轴 正方向
             y = mEvaluator.evaluate(progress, startY, endY);
         } else {
             x = mEvaluator.evaluate(progress, startX, endX);
@@ -206,17 +201,19 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
     @Override
     public void start() {
         super.start();
+        mWheelRotaionAnimator1.start();
+        mWheelRotaionAnimator2.start();
 
+    }
+
+    @Override
+    protected void onCancel() {
+        super.onCancel();
         if (mWheelRotaionAnimator1.isStarted()) {
             mWheelRotaionAnimator1.cancel();
         }
         if (mWheelRotaionAnimator2.isStarted()) {
             mWheelRotaionAnimator2.cancel();
         }
-        mWheelRotaionAnimator1.start();
-        mWheelRotaionAnimator2.start();
-
     }
-
-
 }

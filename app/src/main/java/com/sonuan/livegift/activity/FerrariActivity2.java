@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -24,7 +25,7 @@ public class FerrariActivity2 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ferrari2);
         mLiveGiftBaseLayout = (FrameLayout) findViewById(R.id.fl_live_gift);
-        final LiveGiftBaseLayout liveGiftBaseLayout = new LiveFerrariLayout(this, mLiveGiftBaseLayout);
+        final LiveGiftBaseLayout liveGiftBaseLayout =  new LiveFerrariLayout( mLiveGiftBaseLayout);
         liveGiftBaseLayout.setParentView(mLiveGiftBaseLayout);
         mLiveGiftBaseLayout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -32,5 +33,16 @@ public class FerrariActivity2 extends AppCompatActivity {
                 liveGiftBaseLayout.start();
             }
         });
+    }
+
+    @Override
+    public View onCreateView(String name, Context context, AttributeSet attrs) {
+
+        return super.onCreateView(name, context, attrs);
+    }
+
+    @Override
+    public View onCreateView(View parent, String name, Context context, AttributeSet attrs) {
+        return super.onCreateView(parent, name, context, attrs);
     }
 }
