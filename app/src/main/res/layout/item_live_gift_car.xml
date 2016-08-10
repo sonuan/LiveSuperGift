@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/carFerrari"
+    android:layout_width="226dp"
+    android:layout_height="100dp"
+    android:background="@drawable/ic_live_gift_ferrari"
+    >
+
+
+    <ImageView
+        android:id="@+id/wheel1"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:rotationX="-5.2"
+        android:rotationY="59.6"
+        android:scaleType="fitXY"
+        android:src="@drawable/ic_live_gift_ferrari_wheel"/>
+
+    <ImageView
+        android:id="@+id/wheel2"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:rotationX="-3.8"
+        android:rotationY="61.2"
+        android:scaleType="fitXY"
+        android:src="@drawable/ic_live_gift_ferrari_wheel"/>
+</FrameLayout>

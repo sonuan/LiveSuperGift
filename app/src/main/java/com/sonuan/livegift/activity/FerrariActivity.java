@@ -17,6 +17,7 @@ import com.sonuan.livegift.gift.base.GiftBaseDrawable;
 import com.sonuan.livegift.widget.MyImageView;
 
 import java.io.IOException;
+import java.util.concurrent.ThreadFactory;
 
 
 public class FerrariActivity extends AppCompatActivity implements View.OnClickListener {
@@ -75,6 +76,12 @@ public class FerrariActivity extends AppCompatActivity implements View.OnClickLi
         } catch (IOException e) {
             e.printStackTrace();
         }
+        ThreadFactory threadFactory = new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return null;
+            }
+        };
     }
 
 
@@ -107,10 +114,10 @@ public class FerrariActivity extends AppCompatActivity implements View.OnClickLi
                 if (!TextUtils.isEmpty(offsety)) {
                     angle = Integer.parseInt(anglex);
                 }
-                mIVGift.setX(100f);
-                mIVGift.setScaleX(0.5f);
-                mIVGift.setRotation(30);
-//                ObjectAnimator.ofFloat(mIVGift, "translationY",100f).setDuration(1000).start();
+//                mIVGift.setX(100f);
+//                mIVGift.setScaleX(0.5f);
+//                mIVGift.setRotation(30);
+//                ObjectAnimator.ofFloat(mIVGift, "x",0f,100f).setDuration(1000).start();
 //                LiveGiftPathAnimUtils.transAnim(mIVGift, Gravity.CENTER_VERTICAL, offsetY, 0, 10, null).start();
                 break;
         }

@@ -13,6 +13,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         findViewById(R.id.tv_ferrar).setOnClickListener(this);
+        findViewById(R.id.tv_ferrar2).setOnClickListener(this);
     }
 
     @Override
@@ -20,6 +21,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.tv_ferrar:
                 FerrariActivity.toActivity(this);
+                break;
+            case R.id.tv_ferrar2:
+                FerrariActivity2.toActivity(this);
                 break;
         }
     }

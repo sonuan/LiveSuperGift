@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".activity.MainActivity"
     >
 
@@ -11,9 +12,21 @@
         android:id="@+id/tv_ferrar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp"
-        android:textSize="16sp"
         android:background="@android:color/white"
+        android:padding="12dp"
         android:text="法拉利"
+        android:textSize="16sp"
         />
+
+    <TextView
+        android:id="@+id/tv_ferrar2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1px"
+        android:background="@android:color/white"
+        android:padding="12dp"
+        android:text="法拉利2"
+        android:textSize="16sp"
+        />
+
 </LinearLayout>
