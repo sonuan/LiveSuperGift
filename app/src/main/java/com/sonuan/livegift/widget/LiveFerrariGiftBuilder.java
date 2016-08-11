@@ -9,49 +9,44 @@ import android.widget.ImageView;
 
 import com.sonuan.livegift.R;
 
+
 /**
  * @author: wusongyuan
  * @date: 2016.08.10
  * @desc:
  */
-public class LiveFerrariBuilder extends LiveGiftBaseBuilder {
+public class LiveFerrariGiftBuilder extends LiveGiftBaseBuilder {
 
     private ObjectAnimator mWheelRotaionAnimator1;
     private ObjectAnimator mWheelRotaionAnimator2;
     private ImageView mCarWheel1;
     private ImageView mCarWheel2;
 
-    private View view;
-
-    private int mStartX = 0;
-    private int mPathAngle = 10;
-    private int gravity = Gravity.BOTTOM;
-    private int offsetY = -300;
+    private View mAnimView;
 
     private static int[] duration = {800, 700, 800};
 
-    public LiveFerrariBuilder(ViewGroup viewGroup) {
+    public LiveFerrariGiftBuilder(ViewGroup viewGroup) {
         super(viewGroup, duration);
     }
 
     @Override
     protected void onCreate() {
-        super.onCreate();
         setContentView(R.layout.item_live_gift_car);
     }
 
     protected void initViews() {
-        view = findViewById(R.id.carFerrari);
-        if (view.getMeasuredHeight() == 0 || view.getMeasuredWidth() == 0) {
+        mAnimView = findViewById(R.id.carFerrari);
+        if (mAnimView.getMeasuredHeight() == 0 || mAnimView.getMeasuredWidth() == 0) {
             int width = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
             int height = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
-            view.measure(width, height);
+            mAnimView.measure(width, height);
         }
         mCarWheel1 = (ImageView) findViewById(R.id.wheel1);
         mCarWheel2 = (ImageView) findViewById(R.id.wheel2);
 
-        updateWheelParams(view, mCarWheel1, 95 / 540f, 95 / 237f, 324 / 540f, 125 / 237f);
-        updateWheelParams(view, mCarWheel2, 78 / 540f, 78 / 237f, 479 / 540f, 74 / 237f);
+        updateWheelParams(mAnimView, mCarWheel1, 95 / 540f, 95 / 237f, 324 / 540f, 125 / 237f);
+        updateWheelParams(mAnimView, mCarWheel2, 78 / 540f, 78 / 237f, 479 / 540f, 74 / 237f);
     }
 
     protected void setupChildAnimators() {
@@ -67,22 +62,8 @@ public class LiveFerrariBuilder extends LiveGiftBaseBuilder {
     }
 
 
-    private int[] mParam;
-    int[] param1 = {720, 170, Gravity.TOP, 87, 0, 0};
-    int[] param2 = {0, 10, Gravity.TOP, 87, 0, 0};
-
     protected void initDatas() {
-        mParam = param1;
-        prepare(view, mParam);
-    }
-
-    public void toggle() {
-        if (mParam == param1) {
-            mParam = param2;
-        } else {
-            mParam = param1;
-        }
-        prepare(view, mParam);
+        this.setAnimView(mAnimView).setStartX(720).setPathAngle(170).setGravity(Gravity.TOP).setOffsetY(100).build();
     }
 
 
@@ -91,7 +72,6 @@ public class LiveFerrariBuilder extends LiveGiftBaseBuilder {
         int width = parentView.getMeasuredWidth();
         int height = parentView.getMeasuredHeight();
 
-        Log.d("LiveFerrariBuilder", "width:" + width + "  height:" + height);
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) wheel.getLayoutParams();
         params.width = Math.round(width * rW);
         params.height = Math.round(height * rH);
@@ -104,19 +84,35 @@ public class LiveFerrariBuilder extends LiveGiftBaseBuilder {
     @Override
     public void start() {
         super.start();
-        mWheelRotaionAnimator1.start();
-        mWheelRotaionAnimator2.start();
+        if (mWheelRotaionAnimator1 != null) {
+            mWheelRotaionAnimator1.start();
+        }
+        if (mWheelRotaionAnimator2 != null) {
+            mWheelRotaionAnimator2.start();
+        }
+
     }
 
     @Override
     protected void onCancel() {
-        super.onCancel();
-        Log.d("LiveFerrariBuilder", "cancel");
+        Log.i(TAG, "onCancel()");
         if (mWheelRotaionAnimator1 != null && mWheelRotaionAnimator1.isStarted()) {
             mWheelRotaionAnimator1.cancel();
         }
         if (mWheelRotaionAnimator2 != null && mWheelRotaionAnimator2.isStarted()) {
             mWheelRotaionAnimator2.cancel();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        onCancel();
+    }
+
+    @Override
+    protected void onAnimationRepeat(int currentIteration, @RepeatMode int repeatMode, boolean isMirror) {
+        super.onAnimationRepeat(currentIteration, repeatMode, isMirror);
+
     }
 }

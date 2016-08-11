@@ -5,7 +5,6 @@ import android.animation.AnimatorSet;
 import android.animation.FloatEvaluator;
 import android.animation.ValueAnimator;
 import android.content.Context;
-import android.os.Build;
 import android.support.annotation.IdRes;
 import android.support.annotation.LayoutRes;
 import android.util.Log;
@@ -13,11 +12,12 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 
+
 import java.math.BigDecimal;
+
 
 /**
  * @author: wusongyuan
@@ -26,15 +26,16 @@ import java.math.BigDecimal;
  */
 public abstract class LiveGiftBaseBuilder {
 
-    private static final String TAG = LiveGiftBaseBuilder.class.getSimpleName();
+    protected String TAG = "";
     // 屏幕的宽度
-    public int mParentWidth = 0;
+    private int mParentWidth = 0;
     // 屏幕的高度, 到时要减掉状态栏标题栏
-    public int mParentHeight = 0;
+    private int mParentHeight = 0;
     // 屏幕高度的一半
-    public int mParentHeightHalf;
+    private int mParentHeightHalf;
 
-    private Animator.AnimatorListener mAnimatorListener;
+    protected OnGiftAnimatorListener mGiftAnimatorListener;
+
     private AnimatorSet mAnimatorSet;
 
     private Context mContext;
@@ -58,6 +59,18 @@ public abstract class LiveGiftBaseBuilder {
     private int mPauseDuration = DEFAUL_DURATION[1];
     private int mExitDuration = DEFAUL_DURATION[2];
 
+    private int mRepeatCount = 0;
+    private int mCurrentIteration;
+    @RepeatMode
+    private int mRepeatMode = RepeatMode.RESTART;
+
+    public @interface RepeatMode {
+        int RESTART = 1;
+        int REVERSE = 2;
+        int MIRROR = 3; // 镜像
+        int TOGGLE = 4; // 镜像切换
+    }
+
     public LiveGiftBaseBuilder(ViewGroup viewGroup) {
         this(viewGroup, null);
     }
@@ -66,6 +79,7 @@ public abstract class LiveGiftBaseBuilder {
         if (viewGroup == null) {
             return;
         }
+        TAG = getClass().getSimpleName();
         mContext = viewGroup.getContext();
         mParentView = viewGroup;
 
@@ -77,46 +91,30 @@ public abstract class LiveGiftBaseBuilder {
             }
         }
 
-        ViewTreeObserver vto = mParentView.getViewTreeObserver();
-        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                    mParentView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                } else {
-                    mParentView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                }
-                mParentWidth = mParentView.getWidth();
-                mParentHeight = mParentView.getHeight();
-                mParentHeightHalf = mParentHeight / 2;
-                onCreate();
-                initViews();
-                setupChildAnimators();
-                initDatas();
-                Log.d("LiveGiftBaseBuilder", "mParentWidth:" + mParentWidth);
-                Log.d("LiveGiftBaseBuilder", "mParentHeight:" + mParentHeight);
-            }
-        });
+        mParentWidth = 720;
+        mParentHeight = 1280;
+        mParentHeightHalf = mParentHeight / 2;
+        onCreate();
+        setupAnimators();
+        initViews();
+        setupChildAnimators();
+        initDatas();
     }
 
 
-    public Context getContext() {
+    protected Context getContext() {
         return mContext;
     }
 
-    protected void onCreate() {
-        setupAnimators();
-    }
 
     protected void setContentView(@LayoutRes int res) {
         mContentView = LayoutInflater.from(mContext).inflate(res, mParentView, false);
-        if (mContentView == null || mParentView == null) {
-            return;
-        }
         if (mContentView.getParent() != null) {
             ((ViewGroup) mContentView.getParent()).removeView(mContentView);
         }
-        mParentView.addView(mContentView);
+        if (mParentView != null && mContentView != null) {
+            mParentView.addView(mContentView);
+        }
     }
 
     private int mStartX = 0;
@@ -131,73 +129,75 @@ public abstract class LiveGiftBaseBuilder {
 
     private View mAnimView;
 
-    /**
-     * @param animView
-     */
-    protected void prepare(View animView, int... params) {
-        if (params == null) {
-            return;
-        }
-        if (params.length >= 6) {
-            mStartX = params[0];
-            mPathAngle = params[1];
-            mGravity = params[2];
-            mOffsetY = params[3];
-            mPauseOffsetX = params[4];
-            mPauseOffsetY = params[5];
-        }
 
-        mAnimView = animView;
-
+    private void calculateAngleTan() {
         final float tanAngle = (float) Math.tan(mPathAngle / 180.0f * Math.PI);
         mTanBigDecimal = new BigDecimal(tanAngle);
+    }
 
-        int endX = 0;
+    private float getAngleTan() {
+        if (mTanBigDecimal == null) {
+            calculateAngleTan();
+        }
+        return mTanBigDecimal.floatValue();
+    }
 
+    private void calculateEnterStartY(View moveView, int gravity, int offsetY) {
         int startY = 0; // 确定Y轴上的位置
         // 根据offsetY偏移量计算出y轴开始坐标
-        if (mGravity == Gravity.TOP) {
-            startY = 0 + mOffsetY;
-        } else if (mGravity == Gravity.CENTER_VERTICAL) {
-            startY = mParentHeightHalf - animView.getMeasuredHeight() / 2 + mOffsetY;
-        } else if (mGravity == Gravity.BOTTOM) {
-            startY = mParentHeight - animView.getMeasuredHeight() + mOffsetY;
+        if (gravity == Gravity.TOP) {
+            startY = 0 + offsetY;
+        } else if (gravity == Gravity.CENTER_VERTICAL) {
+            startY = mParentHeightHalf - moveView.getMeasuredHeight() / 2 + offsetY;
+        } else if (gravity == Gravity.BOTTOM) {
+            startY = mParentHeight - moveView.getMeasuredHeight() + offsetY;
         } else {
             // mGravity is not one of Gravity.TOP,Gravity.CENTER_VERTICAL,Gravity.BOTTOM
             return;
         }
         mEnterStartY = startY; // y轴原始坐标, 根据gravity和offsetY计算得出
+    }
 
+    private void calculateEnterStartXAndExitEndX(View moveView, float angle, float startX) {
+        int endX = 0;
         // 因为必须移出到屏幕以外,利用角度, 得出x轴最终坐标
-        if (360 - mPathAngle <= 90 || mPathAngle <= 90) { // x轴正方向
+        if (360 - angle <= 90 || angle <= 90) { // x轴正方向
             endX = mParentWidth;
-            mEnterStartX = mStartX - animView.getMeasuredWidth(); // 需要减掉该view的宽
+            mEnterStartX = startX - moveView.getMeasuredWidth(); // 需要减掉该view的宽
         } else { // x轴负方向
-            endX = 0 - animView.getMeasuredWidth();
-            mEnterStartX = mStartX;
+            endX = 0 - moveView.getMeasuredWidth();
+            mEnterStartX = startX;
         }
         mExitEndX = endX; // x轴最终坐标
+    }
 
-
+    private void calculateExitEndY(View moveView, float angle) {
         int endY = 0;
-        if (mPathAngle == 270) { // y轴 负方向
-            endY = 0 - animView.getMeasuredHeight();
-        } else if (mPathAngle == 90) { // y轴 正方向
-            endY = mParentHeight + animView.getMeasuredHeight();
+        if (angle == 270) { // y轴 负方向
+            endY = 0 - moveView.getMeasuredHeight();
+        } else if (angle == 90) { // y轴 正方向
+            endY = mParentHeight + moveView.getMeasuredHeight();
         }
         mExitEndY = endY;
+    }
 
+    private void calculatePauseXY(float pauseOffsetX, float pauseOffsetY) {
         mPauseStartX = (mExitEndX + mEnterStartX) / 2.0f;// 暂停x轴坐标
-        mPauseStartY = mEnterStartY + ((mPauseStartX - mEnterStartX) * mTanBigDecimal.floatValue());
+        //mPauseStartY = mEnterStartY + ((mPauseStartX - mEnterStartX) *  getTanAngle());
+        mPauseStartY = calculateY(mPauseStartX, mEnterStartX, mEnterStartY, getAngleTan());
 
-        mPauseEndX = mPauseStartX + mPauseOffsetX;
-        mPauseEndY = mPauseStartY + mPauseOffsetY;
+        mPauseEndX = mPauseStartX + pauseOffsetX;
+        mPauseEndY = mPauseStartY + pauseOffsetY;
+    }
 
+    private float calculateY(float startX, float endX, float startY, float tan) {
+        return startY + ((endX - startX) * tan);
     }
 
 
     protected View findViewById(@IdRes int id) {
         if (mContentView == null) {
+            Log.i(TAG, "findViewById: mContentView == null");
             return null;
         }
         return mContentView.findViewById(id);
@@ -222,7 +222,6 @@ public abstract class LiveGiftBaseBuilder {
 
             }
         });
-
         final ValueAnimator pauseAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
         pauseAnimator.setDuration(mPauseDuration);
         pauseAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -248,43 +247,95 @@ public abstract class LiveGiftBaseBuilder {
         mAnimatorSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                if (mAnimatorListener != null) {
-                    mAnimatorListener.onAnimationStart(animation);
-                }
+                LiveGiftBaseBuilder.this.onAnimationStart();
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                if (mAnimatorListener != null) {
-                    mAnimatorListener.onAnimationEnd(animation);
+                if (mCurrentIteration < mRepeatCount) {
+                    if (mRepeatMode == RepeatMode.RESTART) {
+                        start();
+                    } else if (mRepeatMode == RepeatMode.MIRROR) {
+                        toggle();
+                    } else if (mRepeatMode == RepeatMode.TOGGLE) {
+                        toggle();
+                    }
+                    LiveGiftBaseBuilder.this.onAnimationRepeat(mCurrentIteration, mRepeatMode, mIsMirror);
+                    mCurrentIteration++;
+                } else {
+                    LiveGiftBaseBuilder.this.onAnimationEnd();
+                    if (mGiftAnimatorListener != null) {
+                        mGiftAnimatorListener.onAnimatorEnd();
+                    }
                 }
             }
 
             @Override
             public void onAnimationCancel(Animator animation) {
-                if (mAnimatorListener != null) {
-                    mAnimatorListener.onAnimationCancel(animation);
-                }
-                onCancel();
+                LiveGiftBaseBuilder.this.onAnimationCancel();
+
             }
 
             @Override
             public void onAnimationRepeat(Animator animation) {
-                if (mAnimatorListener != null) {
-                    mAnimatorListener.onAnimationRepeat(animation);
-                }
+
             }
         });
     }
 
+    protected void onAnimationStart() {
+
+    }
+
+    protected void onAnimationEnd() {
+
+    }
+
+    protected void onAnimationCancel() {
+
+    }
+
+    protected void onAnimationRepeat(int currentIteration, @RepeatMode int repeatMode, boolean isMirror) {
+
+    }
+
+    private boolean mIsMirror = false;
+
+    private void toggle() {
+        mIsMirror = !mIsMirror;
+        mStartX = mParentWidth - mStartX;
+        if (mPathAngle > 180) {
+            mPathAngle = 360 - (mPathAngle - 180);
+        } else {
+            mPathAngle = 180 - mPathAngle;
+        }
+        build();
+        start();
+    }
+
+    protected void build() {
+        calculateEnterStartY(mAnimView, mGravity, mOffsetY);
+        calculateEnterStartXAndExitEndX(mAnimView, mPathAngle, mStartX);
+        calculateExitEndY(mAnimView, mPathAngle);
+        calculatePauseXY(mPauseOffsetX, mPauseOffsetY);
+    }
+
     public void start() {
-        if (mAnimatorSet == null) {
-            setupAnimators();
+        Log.i(TAG, "start: ");
+        if (isRunning()) {
+            Log.i(TAG, "start()  isRunning");
+            return;
         }
-        if (mAnimatorSet.isRunning()) {
-            mAnimatorSet.cancel();
+        if (mAnimatorSet != null) {
+            //if (mAnimatorSet.isRunning()) {
+            //    return;
+            //}
+            mAnimatorSet.start();
         }
-        mAnimatorSet.start();
+        mCurrentIteration = 0;
+        if (mGiftAnimatorListener != null) {
+            mGiftAnimatorListener.onAnimatorStart();
+        }
     }
 
     protected void setXY(float progress, View animView, float startX, float endX, float startY, float endY) {
@@ -300,7 +351,8 @@ public abstract class LiveGiftBaseBuilder {
             y = mEvaluator.evaluate(progress, startY, endY);
         } else {
             x = mEvaluator.evaluate(progress, startX, endX);
-            y = startY + ((x - startX) * mTanBigDecimal.floatValue());
+            //y = startY + ((x - startX) *  getTanAngle());
+            y = calculateY(x, startX, startY, getAngleTan());
         }
         animView.setX(x);
         animView.setY(y);
@@ -310,11 +362,13 @@ public abstract class LiveGiftBaseBuilder {
         setXY(progress, mAnimView, startX, endX, startY, endY);
     }
 
+    protected abstract void onCreate();
+
+    protected abstract void initViews();
+
     protected abstract void setupChildAnimators();
 
     protected abstract void initDatas();
-
-    protected abstract void initViews();
 
     protected void enterAnimator(float progress) {
         setXY(progress, mAnimView, mEnterStartX, mPauseStartX, mEnterStartY, mPauseStartY);
@@ -331,14 +385,135 @@ public abstract class LiveGiftBaseBuilder {
         setXY(progress, mAnimView, mPauseEndX, mExitEndX, mPauseEndY, mExitEndY);
     }
 
+    public void cancel() {
+        if (mAnimatorSet != null && mAnimatorSet.isRunning()) {
+            mAnimatorSet.cancel();
+        }
+        onCancel();
+    }
 
-    protected void onCancel() {
+    public void stop() {
+        cancel();
+    }
+
+    protected abstract void onCancel();
+
+
+    public interface OnGiftAnimatorListener {
+        void onAnimatorStart();
+
+        void onAnimatorEnd();
+    }
+
+    public void release() {
+        onDestroy();
+    }
+
+    protected void onDestroy() {
+        if (mAnimatorSet != null) {
+            if (mAnimatorSet.isRunning()) mAnimatorSet.cancel();
+            mAnimatorSet = null;
+        }
+
+        if (mContentView.getParent() != null) {
+            ((ViewGroup) mContentView.getParent()).removeView(mContentView);
+        }
+    }
+
+
+    //public OnGiftAnimatorListener getGiftAnimatorListener() {
+    //    return mGiftAnimatorListener;
+    //}
+
+    public void setGiftAnimatorListener(OnGiftAnimatorListener giftAnimatorListener) {
+        mGiftAnimatorListener = giftAnimatorListener;
+    }
+
+
+    public int getRepeatCount() {
+        return mRepeatCount;
+    }
+
+    public LiveGiftBaseBuilder setRepeatCount(int repeatCount) {
+        mRepeatCount = repeatCount;
+        return this;
+    }
+
+    public int getRepeatMode() {
+        return mRepeatMode;
+    }
+
+    public LiveGiftBaseBuilder setRepeatMode(@RepeatMode int repeatMode) {
+        mRepeatMode = repeatMode;
+        return this;
+    }
+
+    public int getStartX() {
+        return mStartX;
+    }
+
+    public LiveGiftBaseBuilder setStartX(int startX) {
+        mStartX = startX;
+        return this;
+    }
+
+    public int getPathAngle() {
+        return mPathAngle;
+    }
+
+    public LiveGiftBaseBuilder setPathAngle(int pathAngle) {
+        mPathAngle = pathAngle;
+        return this;
 
     }
 
-    public void setAnimatorListener(Animator.AnimatorListener animatorListener) {
-        mAnimatorListener = animatorListener;
+    public int getOffsetY() {
+        return mOffsetY;
     }
 
+    public LiveGiftBaseBuilder setOffsetY(int offsetY) {
+        mOffsetY = offsetY;
+        return this;
 
+    }
+
+    public int getGravity() {
+        return mGravity;
+    }
+
+    public LiveGiftBaseBuilder setGravity(int gravity) {
+        mGravity = gravity;
+        return this;
+
+    }
+
+    public int getPauseOffsetX() {
+        return mPauseOffsetX;
+    }
+
+    public LiveGiftBaseBuilder setPauseOffsetX(int pauseOffsetX) {
+        mPauseOffsetX = pauseOffsetX;
+        return this;
+
+    }
+
+    public int getPauseOffsetY() {
+        return mPauseOffsetY;
+    }
+
+    public LiveGiftBaseBuilder setPauseOffsetY(int pauseOffsetY) {
+        mPauseOffsetY = pauseOffsetY;
+        return this;
+
+    }
+
+    public View getAnimView() {
+        return mAnimView;
+    }
+
+    public LiveGiftBaseBuilder setAnimView(View animView) {
+        mAnimView = animView;
+        Log.i(TAG, "setAnimView mAnimView :" + (mAnimView == null));
+        return this;
+    }
 }
