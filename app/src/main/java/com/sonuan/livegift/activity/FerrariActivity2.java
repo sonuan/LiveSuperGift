@@ -1,15 +1,16 @@
 package com.sonuan.livegift.activity;
 
+import android.animation.Animator;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.FrameLayout;
 
 import com.sonuan.livegift.R;
-import com.sonuan.livegift.widget.LiveFerrariLayout;
-import com.sonuan.livegift.widget.LiveGiftBaseLayout;
+import com.sonuan.livegift.widget.LiveFerrariBuilder;
 
 public class FerrariActivity2 extends AppCompatActivity {
 
@@ -27,11 +28,38 @@ public class FerrariActivity2 extends AppCompatActivity {
         mLiveGiftBaseLayout = (FrameLayout) findViewById(R.id.fl_live_gift);
 
 
-        final LiveGiftBaseLayout liveGiftBaseLayout = new LiveFerrariLayout(mLiveGiftBaseLayout);
+        final LiveFerrariBuilder liveGiftBaseBuilder = new LiveFerrariBuilder(mLiveGiftBaseLayout);
         mLiveGiftBaseLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                liveGiftBaseLayout.start();
+                liveGiftBaseBuilder.start();
+            }
+        });
+        liveGiftBaseBuilder.setAnimatorListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                liveGiftBaseBuilder.toggle();
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        liveGiftBaseBuilder.start();
+                    }
+                }, 100);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
             }
         });
     }

@@ -14,7 +14,7 @@ import com.sonuan.livegift.R;
  * @date: 2016.08.10
  * @desc:
  */
-public class LiveFerrariLayout extends LiveGiftBaseLayout {
+public class LiveFerrariBuilder extends LiveGiftBaseBuilder {
 
     private ObjectAnimator mWheelRotaionAnimator1;
     private ObjectAnimator mWheelRotaionAnimator2;
@@ -28,12 +28,10 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
     private int gravity = Gravity.BOTTOM;
     private int offsetY = -300;
 
-    private int enterDuration = 0;
-    private int pauseDuration = 0;
-    private int exitDuration = 0;
+    private static int[] duration = {800, 700, 800};
 
-    public LiveFerrariLayout(ViewGroup viewGroup) {
-        super(viewGroup);
+    public LiveFerrariBuilder(ViewGroup viewGroup) {
+        super(viewGroup, duration);
     }
 
     @Override
@@ -56,7 +54,7 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
         updateWheelParams(view, mCarWheel2, 78 / 540f, 78 / 237f, 479 / 540f, 74 / 237f);
     }
 
-    protected void initAnims() {
+    protected void setupChildAnimators() {
         mWheelRotaionAnimator1 = ObjectAnimator.ofFloat(mCarWheel1, "rotation", mCarWheel1.getRotation() - 360);
         mWheelRotaionAnimator1.setInterpolator(null);
         mWheelRotaionAnimator1.setDuration(500);
@@ -68,8 +66,23 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
         mWheelRotaionAnimator2.setRepeatCount(-1);
     }
 
+
+    private int[] mParam;
+    int[] param1 = {720, 170, Gravity.TOP, 87, 0, 0};
+    int[] param2 = {0, 10, Gravity.TOP, 87, 0, 0};
+
     protected void initDatas() {
-        prepare(view);
+        mParam = param1;
+        prepare(view, mParam);
+    }
+
+    public void toggle() {
+        if (mParam == param1) {
+            mParam = param2;
+        } else {
+            mParam = param1;
+        }
+        prepare(view, mParam);
     }
 
 
@@ -78,7 +91,7 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
         int width = parentView.getMeasuredWidth();
         int height = parentView.getMeasuredHeight();
 
-        Log.d("LiveFerrariLayout", "width:" + width + "  height:" + height);
+        Log.d("LiveFerrariBuilder", "width:" + width + "  height:" + height);
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) wheel.getLayoutParams();
         params.width = Math.round(width * rW);
         params.height = Math.round(height * rH);
@@ -89,40 +102,20 @@ public class LiveFerrariLayout extends LiveGiftBaseLayout {
     }
 
     @Override
-    protected void enterAnimator(float progress) {
-        setXY(progress, view, mEnterStartX, mPauseStartX, mEnterStartY, mPauseStartY);
-    }
-
-    @Override
-    protected void pauseAnimator(float progress) {
-        if (mPauseStartX == mPauseEndX && mPauseStartY == mPauseEndY) {
-            return;
-        }
-        setXY(progress, view, mPauseStartX, mPauseEndX, mPauseStartY, mPauseEndY);
-    }
-
-    @Override
-    protected void exitAnimator(float progress) {
-        setXY(progress, view, mPauseEndX, mExitEndX, mPauseEndY, mExitEndY);
-    }
-
-
-    @Override
     public void start() {
         super.start();
         mWheelRotaionAnimator1.start();
         mWheelRotaionAnimator2.start();
-
     }
 
     @Override
     protected void onCancel() {
         super.onCancel();
-        Log.d("LiveFerrariLayout", "cancel");
-        if (mWheelRotaionAnimator1.isStarted()) {
+        Log.d("LiveFerrariBuilder", "cancel");
+        if (mWheelRotaionAnimator1 != null && mWheelRotaionAnimator1.isStarted()) {
             mWheelRotaionAnimator1.cancel();
         }
-        if (mWheelRotaionAnimator2.isStarted()) {
+        if (mWheelRotaionAnimator2 != null && mWheelRotaionAnimator2.isStarted()) {
             mWheelRotaionAnimator2.cancel();
         }
     }
