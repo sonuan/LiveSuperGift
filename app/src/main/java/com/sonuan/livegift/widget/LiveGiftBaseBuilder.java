@@ -64,6 +64,18 @@ public abstract class LiveGiftBaseBuilder {
     @RepeatMode
     private int mRepeatMode = RepeatMode.RESTART;
 
+    private int mStartX = 0;
+    private int mPathAngle = 10;
+    private int mGravity = Gravity.BOTTOM;
+    private int mOffsetY = -300;
+    private int mPauseOffsetX = 0;
+    private int mPauseOffsetY = 0;
+
+    private BigDecimal mTanBigDecimal;
+    static FloatEvaluator mEvaluator = new FloatEvaluator();
+
+    private View mAnimView;
+
     public @interface RepeatMode {
         int RESTART = 1;
         int REVERSE = 2;
@@ -90,15 +102,12 @@ public abstract class LiveGiftBaseBuilder {
                 mExitDuration = animTimes[2];
             }
         }
-
+        // TODO: 16/8/12 屏幕宽高
         mParentWidth = 720;
         mParentHeight = 1280;
         mParentHeightHalf = mParentHeight / 2;
-        onCreate();
         setupAnimators();
-        initViews();
-        setupChildAnimators();
-        initDatas();
+        onCreate();
     }
 
 
@@ -116,19 +125,6 @@ public abstract class LiveGiftBaseBuilder {
             mParentView.addView(mContentView);
         }
     }
-
-    private int mStartX = 0;
-    private int mPathAngle = 10;
-    private int mGravity = Gravity.BOTTOM;
-    private int mOffsetY = -300;
-    private int mPauseOffsetX = 0;
-    private int mPauseOffsetY = 0;
-
-    private BigDecimal mTanBigDecimal;
-    static FloatEvaluator mEvaluator = new FloatEvaluator();
-
-    private View mAnimView;
-
 
     private void calculateAngleTan() {
         final float tanAngle = (float) Math.tan(mPathAngle / 180.0f * Math.PI);
@@ -184,7 +180,7 @@ public abstract class LiveGiftBaseBuilder {
     private void calculatePauseXY(float pauseOffsetX, float pauseOffsetY) {
         mPauseStartX = (mExitEndX + mEnterStartX) / 2.0f;// 暂停x轴坐标
         //mPauseStartY = mEnterStartY + ((mPauseStartX - mEnterStartX) *  getTanAngle());
-        mPauseStartY = calculateY(mPauseStartX, mEnterStartX, mEnterStartY, getAngleTan());
+        mPauseStartY = calculateY(mEnterStartX, mPauseStartX, mEnterStartY, getAngleTan());
 
         mPauseEndX = mPauseStartX + pauseOffsetX;
         mPauseEndY = mPauseStartY + pauseOffsetY;
@@ -252,9 +248,10 @@ public abstract class LiveGiftBaseBuilder {
 
             @Override
             public void onAnimationEnd(Animator animation) {
+                Log.i(TAG, "mRepeatMode:" + mRepeatMode);
                 if (mCurrentIteration < mRepeatCount) {
                     if (mRepeatMode == RepeatMode.RESTART) {
-                        start();
+                        start(true);
                     } else if (mRepeatMode == RepeatMode.MIRROR) {
                         toggle();
                     } else if (mRepeatMode == RepeatMode.TOGGLE) {
@@ -309,33 +306,36 @@ public abstract class LiveGiftBaseBuilder {
         } else {
             mPathAngle = 180 - mPathAngle;
         }
+        Log.i(TAG, "toggle: " + mPathAngle + " mStartX:" + mStartX);
         build();
-        start();
+        start(true);
     }
 
     protected void build() {
+        calculateAngleTan();
         calculateEnterStartY(mAnimView, mGravity, mOffsetY);
         calculateEnterStartXAndExitEndX(mAnimView, mPathAngle, mStartX);
         calculateExitEndY(mAnimView, mPathAngle);
         calculatePauseXY(mPauseOffsetX, mPauseOffsetY);
     }
 
-    public void start() {
-        Log.i(TAG, "start: ");
-        if (isRunning()) {
-            Log.i(TAG, "start()  isRunning");
-            return;
+    private void start(boolean isRepeat) {
+        if (!isRepeat) {
+            if (mGiftAnimatorListener != null) {
+                mGiftAnimatorListener.onAnimatorStart();
+            }
+            mCurrentIteration = 0;
+            Log.i(TAG, "start ");
+        } else {
+            Log.i(TAG, "restart ");
         }
         if (mAnimatorSet != null) {
-            //if (mAnimatorSet.isRunning()) {
-            //    return;
-            //}
             mAnimatorSet.start();
         }
-        mCurrentIteration = 0;
-        if (mGiftAnimatorListener != null) {
-            mGiftAnimatorListener.onAnimatorStart();
-        }
+    }
+
+    public void start() {
+        start(false);
     }
 
     protected void setXY(float progress, View animView, float startX, float endX, float startY, float endY) {
@@ -351,8 +351,8 @@ public abstract class LiveGiftBaseBuilder {
             y = mEvaluator.evaluate(progress, startY, endY);
         } else {
             x = mEvaluator.evaluate(progress, startX, endX);
-            //y = startY + ((x - startX) *  getTanAngle());
-            y = calculateY(x, startX, startY, getAngleTan());
+            //y = startY + ((x - startX) *  getAngleTan());
+            y = calculateY(startX, x, startY, getAngleTan());
         }
         animView.setX(x);
         animView.setY(y);
@@ -364,11 +364,11 @@ public abstract class LiveGiftBaseBuilder {
 
     protected abstract void onCreate();
 
-    protected abstract void initViews();
-
-    protected abstract void setupChildAnimators();
-
-    protected abstract void initDatas();
+    //protected abstract void initViews();
+    //
+    //protected abstract void setupChildAnimators();
+    //
+    //protected abstract void initDatas();
 
     protected void enterAnimator(float progress) {
         setXY(progress, mAnimView, mEnterStartX, mPauseStartX, mEnterStartY, mPauseStartY);
@@ -434,7 +434,7 @@ public abstract class LiveGiftBaseBuilder {
         return mRepeatCount;
     }
 
-    public LiveGiftBaseBuilder setRepeatCount(int repeatCount) {
+    protected LiveGiftBaseBuilder setRepeatCount(int repeatCount) {
         mRepeatCount = repeatCount;
         return this;
     }
@@ -443,7 +443,7 @@ public abstract class LiveGiftBaseBuilder {
         return mRepeatMode;
     }
 
-    public LiveGiftBaseBuilder setRepeatMode(@RepeatMode int repeatMode) {
+    protected LiveGiftBaseBuilder setRepeatMode(@RepeatMode int repeatMode) {
         mRepeatMode = repeatMode;
         return this;
     }
@@ -452,7 +452,7 @@ public abstract class LiveGiftBaseBuilder {
         return mStartX;
     }
 
-    public LiveGiftBaseBuilder setStartX(int startX) {
+    protected LiveGiftBaseBuilder setStartX(int startX) {
         mStartX = startX;
         return this;
     }
@@ -461,7 +461,7 @@ public abstract class LiveGiftBaseBuilder {
         return mPathAngle;
     }
 
-    public LiveGiftBaseBuilder setPathAngle(int pathAngle) {
+    protected LiveGiftBaseBuilder setPathAngle(int pathAngle) {
         mPathAngle = pathAngle;
         return this;
 
@@ -471,7 +471,7 @@ public abstract class LiveGiftBaseBuilder {
         return mOffsetY;
     }
 
-    public LiveGiftBaseBuilder setOffsetY(int offsetY) {
+    protected LiveGiftBaseBuilder setOffsetY(int offsetY) {
         mOffsetY = offsetY;
         return this;
 
@@ -481,7 +481,7 @@ public abstract class LiveGiftBaseBuilder {
         return mGravity;
     }
 
-    public LiveGiftBaseBuilder setGravity(int gravity) {
+    protected LiveGiftBaseBuilder setGravity(int gravity) {
         mGravity = gravity;
         return this;
 
@@ -491,7 +491,7 @@ public abstract class LiveGiftBaseBuilder {
         return mPauseOffsetX;
     }
 
-    public LiveGiftBaseBuilder setPauseOffsetX(int pauseOffsetX) {
+    protected LiveGiftBaseBuilder setPauseOffsetX(int pauseOffsetX) {
         mPauseOffsetX = pauseOffsetX;
         return this;
 
@@ -501,7 +501,7 @@ public abstract class LiveGiftBaseBuilder {
         return mPauseOffsetY;
     }
 
-    public LiveGiftBaseBuilder setPauseOffsetY(int pauseOffsetY) {
+    protected LiveGiftBaseBuilder setPauseOffsetY(int pauseOffsetY) {
         mPauseOffsetY = pauseOffsetY;
         return this;
 
@@ -511,7 +511,7 @@ public abstract class LiveGiftBaseBuilder {
         return mAnimView;
     }
 
-    public LiveGiftBaseBuilder setAnimView(View animView) {
+    protected LiveGiftBaseBuilder setAnimView(View animView) {
         mAnimView = animView;
         Log.i(TAG, "setAnimView mAnimView :" + (mAnimView == null));
         return this;

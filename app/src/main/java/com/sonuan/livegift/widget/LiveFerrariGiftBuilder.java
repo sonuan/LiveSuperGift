@@ -33,6 +33,9 @@ public class LiveFerrariGiftBuilder extends LiveGiftBaseBuilder {
     @Override
     protected void onCreate() {
         setContentView(R.layout.item_live_gift_car);
+        initViews();
+        setupChildAnimators();
+        initDatas();
     }
 
     protected void initViews() {
@@ -63,7 +66,14 @@ public class LiveFerrariGiftBuilder extends LiveGiftBaseBuilder {
 
 
     protected void initDatas() {
-        this.setAnimView(mAnimView).setStartX(720).setPathAngle(170).setGravity(Gravity.TOP).setOffsetY(100).build();
+        this.setAnimView(mAnimView)
+                .setStartX(0)
+                .setPathAngle(10)
+                .setGravity(Gravity.TOP)
+                .setOffsetY(100)
+                .setRepeatCount(1)
+                .setRepeatMode(RepeatMode.TOGGLE)
+                .build();
     }
 
 

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -12,6 +13,9 @@ import com.sonuan.livegift.widget.LiveFerrariGiftBuilder;
 import com.sonuan.livegift.widget.LiveGiftBaseBuilder;
 
 public class FerrariActivity2 extends AppCompatActivity {
+
+    private static final String TAG = FerrariActivity2.class.getSimpleName();
+    private LiveFerrariGiftBuilder mLiveGiftBaseBuilder;
 
     public static void toActivity(Context context) {
         Intent intent = new Intent(context, FerrariActivity2.class);
@@ -27,23 +31,29 @@ public class FerrariActivity2 extends AppCompatActivity {
         mLiveGiftBaseLayout = (FrameLayout) findViewById(R.id.fl_live_gift);
 
 
-        final LiveFerrariGiftBuilder liveGiftBaseBuilder = new LiveFerrariGiftBuilder(mLiveGiftBaseLayout);
+        mLiveGiftBaseBuilder = new LiveFerrariGiftBuilder(mLiveGiftBaseLayout);
         mLiveGiftBaseLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                liveGiftBaseBuilder.start();
+                mLiveGiftBaseBuilder.start();
             }
         });
-        liveGiftBaseBuilder.setGiftAnimatorListener(new LiveGiftBaseBuilder.OnGiftAnimatorListener() {
+        mLiveGiftBaseBuilder.setGiftAnimatorListener(new LiveGiftBaseBuilder.OnGiftAnimatorListener() {
             @Override
             public void onAnimatorStart() {
-
+                Log.i(TAG, "onAnimatorStart: ");
             }
 
             @Override
             public void onAnimatorEnd() {
-
+                Log.i(TAG, "onAnimatorEnd: ");
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mLiveGiftBaseBuilder.release();
     }
 }
