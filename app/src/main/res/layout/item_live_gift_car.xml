@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<com.sonuan.livegift.widget.GiftLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/carFerrari"
     android:layout_width="226dp"
@@ -25,4 +25,4 @@
         android:rotationY="61.2"
         android:scaleType="fitXY"
         android:src="@drawable/ic_live_gift_ferrari_wheel"/>
-</FrameLayout>
+</com.sonuan.livegift.widget.GiftLayout>
