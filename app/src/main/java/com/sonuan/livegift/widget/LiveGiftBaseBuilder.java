@@ -559,7 +559,7 @@ public abstract class LiveGiftBaseBuilder {
         return mExitEndX;
     }
 
-    public LiveGiftBaseBuilder setExitEndY(float exitEndY) {
+    protected LiveGiftBaseBuilder setExitEndY(float exitEndY) {
         mExitEndY = exitEndY;
         return the();
     }

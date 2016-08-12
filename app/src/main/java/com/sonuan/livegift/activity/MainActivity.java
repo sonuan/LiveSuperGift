@@ -14,11 +14,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         findViewById(R.id.tv_ferrar).setOnClickListener(this);
         findViewById(R.id.tv_ferrar2).setOnClickListener(this);
+        findViewById(R.id.tv_ship).setOnClickListener(this);
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+            case R.id.tv_ship:
+                ShipActivity.toActivity(this);
+                break;
             case R.id.tv_ferrar:
                 FerrariActivity.toActivity(this);
                 break;

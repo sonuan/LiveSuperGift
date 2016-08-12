@@ -19,6 +19,8 @@
         </activity>
         <activity android:name=".activity.FerrariActivity2">
         </activity>
+        <activity android:name=".activity.ShipActivity">
+        </activity>
     </application>
 
 </manifest>
