@@ -19,7 +19,6 @@ import android.view.animation.LinearInterpolator;
 import java.math.BigDecimal;
 
 
-
 /**
  * @author: wusongyuan
  * @date: 2016.08.10
@@ -81,6 +80,8 @@ public abstract class LiveGiftBaseBuilder {
 
     private boolean mIsAnimationCanceled = false;
 
+    private boolean mIsRunning = false;
+
     public @interface RepeatMode {
         int RESTART = 1;
         int REVERSE = 2;
@@ -88,37 +89,94 @@ public abstract class LiveGiftBaseBuilder {
         int TOGGLE = 4; // 镜像切换
     }
 
+    protected Context getContext() {
+        return mContext;
+    }
+
+    private LiveGiftBaseBuilder the() {
+        return LiveGiftBaseBuilder.this;
+    }
+
+
     public LiveGiftBaseBuilder(ViewGroup viewGroup) {
         this(viewGroup, null);
     }
 
-    public LiveGiftBaseBuilder(ViewGroup viewGroup, int[] animTimes) {
+    public LiveGiftBaseBuilder(ViewGroup viewGroup, int... animTimes) {
         if (viewGroup == null) {
             return;
         }
         mContext = viewGroup.getContext();
         mParentView = viewGroup;
-
+        int duration = 0;
         if (animTimes != null) {
             if (animTimes.length >= 3) {
                 mEnterDuration = animTimes[0];
                 mPauseDuration = animTimes[1];
                 mExitDuration = animTimes[2];
+            } else if (animTimes.length >= 1) {
+                duration = animTimes[0];
             }
         }
         // TODO: 16/8/13
         mParentWidth = 720;
         mParentHeight = 1280;
         mParentHeightHalf = mParentHeight / 2;
-        setupAnimators();
+        mAnimatorSet = new AnimatorSet();
+        //if (duration != 0) {
+        //    mAnimatorSet.setDuration(duration);
+        //}
+        mAnimatorSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                mIsAnimationCanceled = false;
+                mIsRunning = true;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                mIsRunning = false;
+                Log.i(TAG, "onAnimationEnd() RepeatMode:" + mRepeatMode + " CurrentIteration:" + mCurrentIteration
+                        + " IsMirror:" + mIsMirror);
+                if (mCurrentIteration < mRepeatCount && !mIsAnimationCanceled) {
+                    if (mRepeatMode == RepeatMode.RESTART) {
+                        start(true);
+                    } else if (mRepeatMode == RepeatMode.MIRROR) {
+                        toggleMirror();
+                        start(true);
+                    } else if (mRepeatMode == RepeatMode.TOGGLE) {
+                        toggleMirror();
+                        start(true);
+                    }
+                    the().onAnimationRepeat(mCurrentIteration, mRepeatMode, mIsMirror);
+                    mCurrentIteration++;
+                } else {
+                    reset();
+                    the().onAnimationEnd();
+                    if (mGiftAnimatorListener != null) {
+                        mGiftAnimatorListener.onAnimatorEnd();
+                    }
+                }
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                mIsRunning = false;
+                the().onAnimationCancel();
+                mIsAnimationCanceled = true;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+
+        setupAnimators(mAnimatorSet);
         onCreate();
     }
 
-
-    protected Context getContext() {
-        return mContext;
-    }
-
+    protected abstract void onCreate();
 
     protected void setContentView(@LayoutRes int res) {
         mContentView = LayoutInflater.from(mContext).inflate(res, mParentView, false);
@@ -128,6 +186,14 @@ public abstract class LiveGiftBaseBuilder {
         if (mParentView != null && mContentView != null) {
             mParentView.addView(mContentView);
         }
+    }
+
+    protected View findViewById(@IdRes int id) {
+        if (mContentView == null) {
+            Log.i(TAG, "findViewById: mContentView == null");
+            return null;
+        }
+        return mContentView.findViewById(id);
     }
 
     private void calculateAngleTan(float enterStartX, float enterStartY, float pauseStartX, float pauseStartY) {
@@ -202,23 +268,11 @@ public abstract class LiveGiftBaseBuilder {
         return startY + ((endX - startX) * tan);
     }
 
-
-    protected View findViewById(@IdRes int id) {
-        if (mContentView == null) {
-            Log.i(TAG, "findViewById: mContentView == null");
-            return null;
-        }
-        return mContentView.findViewById(id);
-    }
-
     public boolean isRunning() {
-        return mAnimatorSet != null && mAnimatorSet.isRunning();
+        return mIsRunning;
     }
 
-    private void setupDefaultParams(Context context) {
-    }
-
-    protected void setupAnimators() {
+    protected void setupAnimators(AnimatorSet animatorSet) {
         final ValueAnimator enterAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
         enterAnimator.setDuration(mEnterDuration);
         enterAnimator.setInterpolator(new DecelerateInterpolator());
@@ -250,61 +304,18 @@ public abstract class LiveGiftBaseBuilder {
                 exitAnimator(vaule);
             }
         });
-        mAnimatorSet = new AnimatorSet();
-        mAnimatorSet.playSequentially(enterAnimator, pauseAnimator, exitAnimator);
-        mAnimatorSet.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-                mIsAnimationCanceled = true;
-            }
 
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                Log.i(TAG, "onAnimationEnd() RepeatMode:" + mRepeatMode + " CurrentIteration:" + mCurrentIteration
-                        + " IsMirror:" + mIsMirror);
-                if (mCurrentIteration < mRepeatCount && !mIsAnimationCanceled) {
-                    if (mRepeatMode == RepeatMode.RESTART) {
-                        start(true);
-                    } else if (mRepeatMode == RepeatMode.MIRROR) {
-                        toggleMirror();
-                        start(true);
-                    } else if (mRepeatMode == RepeatMode.TOGGLE) {
-                        toggleMirror();
-                        start(true);
-                    }
-                    the().onAnimationRepeat(mCurrentIteration, mRepeatMode, mIsMirror);
-                    mCurrentIteration++;
-                } else {
-                    reset();
-                    the().onAnimationEnd();
-                    if (mGiftAnimatorListener != null) {
-                        mGiftAnimatorListener.onAnimatorEnd();
-                    }
-                }
-            }
+        animatorSet.playSequentially(enterAnimator, pauseAnimator, exitAnimator);
 
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                the().onAnimationCancel();
-                mIsAnimationCanceled = true;
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-
-            }
-        });
     }
 
-    private LiveGiftBaseBuilder the() {
-        return LiveGiftBaseBuilder.this;
-    }
 
     protected void onAnimationStart() {
         mContentView.setVisibility(View.VISIBLE);
     }
 
     protected void onAnimationEnd() {
+        Log.i(TAG, "end ");
         mContentView.setVisibility(View.INVISIBLE);
     }
 
@@ -341,7 +352,14 @@ public abstract class LiveGiftBaseBuilder {
         calculatePauseXY(mPauseOffsetX, mPauseOffsetY);
     }
 
+    public void start() {
+        start(false);
+    }
+
     private void start(boolean isRepeat) {
+        if (isRunning()) {
+            return;
+        }
         if (!isRepeat) {
             if (mGiftAnimatorListener != null) {
                 mGiftAnimatorListener.onAnimatorStart();
@@ -362,10 +380,6 @@ public abstract class LiveGiftBaseBuilder {
         if (mIsMirror) {
             toggleMirror(); // 恢复原有的位置
         }
-    }
-
-    public void start() {
-        start(false);
     }
 
     protected void setXY(float progress, View animView, float startX, float endX, float startY, float endY) {
@@ -398,14 +412,6 @@ public abstract class LiveGiftBaseBuilder {
         setXY(progress, mMoveView, startX, endX, startY, endY);
     }
 
-    protected abstract void onCreate();
-
-    //protected abstract void initViews();
-    //
-    //protected abstract void setupChildAnimators();
-    //
-    //protected abstract void initDatas();
-
     protected void enterAnimator(float progress) {
         setXY(progress, mMoveView, mEnterStartX, mPauseStartX, mEnterStartY, mPauseStartY);
     }
@@ -424,6 +430,28 @@ public abstract class LiveGiftBaseBuilder {
     public void cancel() {
         if (mAnimatorSet != null && mAnimatorSet.isRunning()) {
             mAnimatorSet.cancel();
+        }
+    }
+
+    protected void cancelAnim(Animator... animators) {
+        if (animators == null) {
+            return;
+        }
+        for (int i = 0; i < animators.length; i++) {
+            if (animators[i] != null && animators[i].isStarted()) {
+                animators[i].cancel();
+            }
+        }
+    }
+
+    protected void startAnim(Animator... animators) {
+        if (animators == null) {
+            return;
+        }
+        for (int i = 0; i < animators.length; i++) {
+            if (animators[i] != null) {
+                animators[i].start();
+            }
         }
     }
 

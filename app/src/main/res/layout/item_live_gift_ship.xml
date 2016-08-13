@@ -4,7 +4,6 @@
              android:layout_height="match_parent"
              android:orientation="vertical">
 
-
     <ImageView
         android:id="@+id/ic_live_gift_ship_wave_below"
         android:layout_width="match_parent"
@@ -13,9 +12,22 @@
         android:src="@drawable/ic_live_gift_ship_wave_below"/>
 
     <ImageView
+        android:id="@+id/ic_live_gift_ship"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_live_gift_ship"/>
+
+    <ImageView
         android:id="@+id/ic_live_gift_ship_wave_above"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_live_gift_ship_wave_above"/>
+
+    <ImageView
+        android:id="@+id/ic_live_gift_ship_light"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_live_gift_ship_light"/>
 </FrameLayout>

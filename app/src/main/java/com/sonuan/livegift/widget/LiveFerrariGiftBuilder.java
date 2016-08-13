@@ -88,12 +88,7 @@ public class LiveFerrariGiftBuilder extends LiveGiftBaseBuilder {
     }
 
     private void cancelAnim() {
-        if (mWheelRotaionAnimator1 != null && mWheelRotaionAnimator1.isStarted()) {
-            mWheelRotaionAnimator1.cancel();
-        }
-        if (mWheelRotaionAnimator2 != null && mWheelRotaionAnimator2.isStarted()) {
-            mWheelRotaionAnimator2.cancel();
-        }
+        cancelAnim(mWheelRotaionAnimator1, mWheelRotaionAnimator2);
     }
 
     @Override
@@ -112,12 +107,13 @@ public class LiveFerrariGiftBuilder extends LiveGiftBaseBuilder {
     protected void onAnimationStart() {
         super.onAnimationStart();
         mMoveView.setIsMirror(false);
-        if (mWheelRotaionAnimator1 != null) {
-            mWheelRotaionAnimator1.start();
-        }
-        if (mWheelRotaionAnimator2 != null) {
-            mWheelRotaionAnimator2.start();
-        }
+        startAnim(mWheelRotaionAnimator1,mWheelRotaionAnimator2);
+    }
+
+    @Override
+    protected void onAnimationEnd() {
+        super.onAnimationEnd();
+        cancelAnim();
     }
 
     @Override
